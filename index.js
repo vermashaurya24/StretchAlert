@@ -1,6 +1,7 @@
 const exp = require("constants");
 const express = require("express");
 const http = require("http");
+const { userInfo } = require("os");
 const ws = require("ws");
 
 const app = express();
@@ -9,19 +10,27 @@ const wss = new ws.Server({ server });
 
 app.use(express.static("./public"));
 
+const userSubscriptions = new Map();
+const userSockets = new Map();
+
 const port = 5000;
 
-app.use(express.json());
-wss.on("connection", (ws) => {
-  console.log("WebSocket connection established");
-
-  ws.on("message", (message) => {
-    console.log(`Received: ${message}`);
-    ws.send(`You sent: ${message}`);
+wss.on("connection", (socket) => {
+  let data;
+  socket.on("message", (message) => {
+    data = JSON.parse(message);
+    console.log(data.type);
+    if (data.type === "subscribe") {
+      userSubscriptions.set(data.userId, data.interval);
+      userSockets.set(data.userId, data.socket);
+      console.log("User successfully added");
+    }
   });
 
-  ws.on("close", () => {
-    console.log("WebSocket connection closed");
+  socket.on("close", () => {
+    userSubscriptions.delete(data.userId);
+    userSockets.delete(data.userId);
+    console.log("User successfully removed.");
   });
 });
 
