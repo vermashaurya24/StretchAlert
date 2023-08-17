@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const ws = require("ws");
+const schedule = require("node-schedule");
 
 const app = express();
 const server = http.createServer(app);
@@ -20,8 +21,9 @@ wss.on("connection", (socket) => {
     console.log(data.type);
     if (data.type === "subscribe") {
       userSubscriptions.set(data.userId, data.interval);
-      userSockets.set(data.userId, data.socket);
+      userSockets.set(data.userId, socket);
       console.log("User successfully added");
+      scheduleNotifications(data.userId);
     }
   });
 
@@ -31,5 +33,23 @@ wss.on("connection", (socket) => {
     console.log("User successfully removed.");
   });
 });
+
+const sendNotifications = (userId) => {
+  const socket = userSockets.get(userId);
+  const notificationMessage =
+    "Remember to check your posture, stretch, and have some water!";
+  socket.send(
+    JSON.stringify({ type: "notification", message: notificationMessage })
+  );
+  console.log("sendNotifications() called");
+};
+
+const scheduleNotifications = (userId) => {
+  const interval = userSubscriptions.get(userId);
+  schedule.scheduleJob(`*/${interval} * * * *`, () => {
+    sendNotifications(userId);
+  });
+  console.log("scheduleNotifications() called");
+};
 
 server.listen(port, () => console.log(`Server running on port ${port}`));
