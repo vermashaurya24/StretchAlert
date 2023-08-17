@@ -20,6 +20,9 @@ wss.on("connection", (socket) => {
   socket.on("message", (message) => {
     const data = JSON.parse(message);
     if (data.type === "subscribe") {
+      if (userSubscriptions.has(data.userId)) {
+        throw new Error("User already exists. Try a new username");
+      }
       userSubscriptions.set(data.userId, data.interval);
       userSockets.set(data.userId, socket);
       scheduleNotifications(data.userId);
