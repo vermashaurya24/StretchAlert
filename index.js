@@ -9,47 +9,55 @@ const wss = new ws.Server({ server });
 
 app.use(express.static("./public"));
 
+//Hash Maps to store respective data associated with each connected user
 const userSubscriptions = new Map();
 const userSockets = new Map();
 
 const port = 5000;
 
+//Websocket connection handler
 wss.on("connection", (socket) => {
-  let data;
   socket.on("message", (message) => {
-    data = JSON.parse(message);
-    console.log(data.type);
+    const data = JSON.parse(message);
     if (data.type === "subscribe") {
       userSubscriptions.set(data.userId, data.interval);
       userSockets.set(data.userId, socket);
-      console.log("User successfully added");
       scheduleNotifications(data.userId);
     }
   });
 
   socket.on("close", () => {
-    userSubscriptions.delete(data.userId);
-    userSockets.delete(data.userId);
-    console.log("User successfully removed.");
+    const userId = getUserBySocket(socket);
+    userSubscriptions.delete(userId);
+    userSockets.delete(userId);
   });
 });
 
-const sendNotifications = (userId) => {
-  const socket = userSockets.get(userId);
-  const notificationMessage =
-    "Remember to check your posture, stretch, and have some water!";
-  socket.send(
-    JSON.stringify({ type: "notification", message: notificationMessage })
-  );
-  console.log("sendNotifications() called");
+const getUserBySocket = (socket) => {
+  for (const [userId, userSocket] of userSockets.entries()) {
+    if (userSocket === socket) {
+      return userId;
+    }
+  }
 };
 
+//Function to schedule and send notifications
 const scheduleNotifications = (userId) => {
   const interval = userSubscriptions.get(userId);
   schedule.scheduleJob(`*/${interval} * * * *`, () => {
-    sendNotifications(userId);
+    const socket = userSockets.get(userId);
+    const notificationMessage =
+      "Remember to check your posture, stretch, and have some water!";
+    socket.send(
+      JSON.stringify({ type: "notification", message: notificationMessage })
+    );
+    console.log(`Message sent to user ${userId}!`);
   });
-  console.log("scheduleNotifications() called");
 };
+
+//load homepage
+app.get("/", (req, res) => {
+  res.sendFile("./public/index.html");
+});
 
 server.listen(port, () => console.log(`Server running on port ${port}`));
