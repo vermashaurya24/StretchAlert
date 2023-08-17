@@ -46,7 +46,7 @@ const sendNotifications = (userId) => {
 
 const scheduleNotifications = (userId) => {
   const interval = userSubscriptions.get(userId);
-  const job = schedule.scheduleJob(`*/${interval} * * * *`, () => {
+  schedule.scheduleJob(`*/${interval} * * * *`, () => {
     sendNotifications(userId);
   });
   console.log("scheduleNotifications() called");
