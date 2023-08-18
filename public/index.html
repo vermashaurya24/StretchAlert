@@ -3,9 +3,122 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello World</title>
+    <title>Stretch Alert</title>
+    <style>
+      body {
+        background-color: lavender;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        text-align: center;
+        padding: 20px;
+      }
+      .button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .red-cross-cursor {
+        cursor: not-allowed;
+      }
+      #stopButton {
+        background-color: red;
+      }
+    </style>
   </head>
   <body>
-    Hello World
+    <div class="container">
+      <h1>Welcome to Stretch Alert!</h1>
+      <p>Select an interval to receive reminders:</p>
+      <button id="20m" class="button" onclick="subscribe(1)">20 minutes</button>
+      <button id="45m" class="button" onclick="subscribe(45)">
+        45 minutes
+      </button>
+      <button id="60m" class="button" onclick="subscribe(60)">1 hour</button>
+      <button
+        id="stopButton"
+        class="button red-cross-cursor"
+        onclick="closeSocket()"
+      >
+        STOP
+      </button>
+    </div>
+    <audio id="notificationSound">
+      <source src="bulletin_ios_7_notif.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+    <script>
+      // Generate a random user ID
+      const userId = Math.random().toString(36).substring(7);
+      const lockButtonClass = "red-cross-cursor";
+      const stopButton = document.getElementById("stopButton");
+      let lock = 0;
+      const intervalButtons = new Map([
+        [20, document.getElementById("20m")],
+        [45, document.getElementById("45m")],
+        [60, document.getElementById("60m")],
+      ]);
+      // WebSocket connection
+      const socket = new WebSocket(`ws://localhost:5000`);
+
+      // Function to send subscription data to the server
+      const subscribe = (interval) => {
+        if (!lock) {
+          lock = 1;
+          stopButton.classList.remove("red-cross-cursor");
+          intervalButtons.forEach((button) =>
+            button.classList.add(lockButtonClass)
+          );
+          const data = {
+            type: "subscribe",
+            userId: userId,
+            interval: interval.toString(),
+          };
+          socket.send(JSON.stringify(data));
+          console.log(`Request for ${interval} interval sent`);
+        }
+      };
+
+      socket.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+        console.log(data);
+        if (data.type === "notification") {
+          console.log(data.message);
+          playNotification(() => {
+            alert(data.message);
+          });
+        }
+      });
+
+      const playNotification = (callback) => {
+        const audioElement = document.getElementById("notificationSound");
+        audioElement.play();
+        audioElement.addEventListener("ended", callback);
+      };
+
+      const closeSocket = () => {
+        if (lock) {
+          lock = 0;
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            stopButton.classList.add("red-cross-cursor");
+            intervalButtons.forEach((button) =>
+              button.classList.remove(lockButtonClass)
+            );
+            console.log("Socket connection closed");
+            socket.close();
+          }
+        }
+      };
+    </script>
   </body>
 </html>
