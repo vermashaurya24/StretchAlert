@@ -54,7 +54,6 @@ const scheduleNotifications = (userId) => {
     socket.send(
       JSON.stringify({ type: "notification", message: notificationMessage })
     );
-    console.log(`Message sent to user ${userId}!`);
   });
 };
 
