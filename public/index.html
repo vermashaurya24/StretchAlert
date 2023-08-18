@@ -40,7 +40,9 @@
     <div class="container">
       <h1>Welcome to Stretch Alert!</h1>
       <p>Select an interval to receive reminders:</p>
-      <button id="20m" class="button" onclick="subscribe(1)">20 minutes</button>
+      <button id="20m" class="button" onclick="subscribe(20)">
+        20 minutes
+      </button>
       <button id="45m" class="button" onclick="subscribe(45)">
         45 minutes
       </button>
@@ -75,7 +77,7 @@
       const subscribe = (interval) => {
         if (!lock) {
           lock = 1;
-          stopButton.classList.remove("red-cross-cursor");
+          stopButton.classList.remove(lockButtonClass);
           intervalButtons.forEach((button) =>
             button.classList.add(lockButtonClass)
           );
@@ -110,7 +112,7 @@
         if (lock) {
           lock = 0;
           if (socket && socket.readyState === WebSocket.OPEN) {
-            stopButton.classList.add("red-cross-cursor");
+            stopButton.classList.add(lockButtonClass);
             intervalButtons.forEach((button) =>
               button.classList.remove(lockButtonClass)
             );
