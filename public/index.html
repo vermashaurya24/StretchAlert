@@ -71,7 +71,7 @@
         [60, document.getElementById("60m")],
       ]);
       // WebSocket connection
-      const socket = new WebSocket(`ws://localhost:5000`);
+      const socket = new WebSocket(`ws://${window.location.host}`);
 
       // Function to send subscription data to the server
       const subscribe = (interval) => {
